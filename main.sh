@@ -1,132 +1,83 @@
 #!/bin/bash
 clear
-echo "=========================================="
-echo "     SSH + XRAY Websocket Installer"
-echo "          By Omar Campos"
-echo "=========================================="
-
-REPO="https://raw.githubusercontent.com/Omar-campos/ssh-xray-websocket/main"
-
-# -----------------------------------------
-# 1. Actualizar sistema
-# -----------------------------------------
-echo "[+] Actualizando servidor..."
-apt update -y && apt upgrade -y
-
-apt install -y curl wget unzip python3 python3-pip socat cron jq
-
-# -----------------------------------------
-# 2. Crear directorio de instalación
-# -----------------------------------------
-INSTALL_DIR="/etc/sshxray"
-mkdir -p $INSTALL_DIR
-cd $INSTALL_DIR
-
-echo "[+] Directorio listo: $INSTALL_DIR"
-
-# -----------------------------------------
-# 3. Lista de archivos del repositorio
-# -----------------------------------------
-FILES=(
-tools.sh
-certificate.sh
-webserver.sh
-badvpn.sh
-dropbear.sh
-websocket.sh
-ghostray.sh
-not_found.html
-addssh.sh
-changedomain.sh
-deletessh.sh
-listusers.sh
-renewcertificate.sh
-restartservices.sh
-sshlogin.sh
-addtrojan.sh
-addvless.sh
-addvmess.sh
-block_site_trojan.sh
-block_site_vless.sh
-block_site_vmess.sh
-bot.sh
-changebanner.sh
-checkbandwith.sh
-checkconfigtrojan.sh
-checkconfigvless.sh
-checkconfigvmess.sh
-checkuserlogintrojan.py
-checkuserloginvless.py
-checkuserloginvmess.py
-deletetrojan.sh
-deletevless.sh
-deletevmess.sh
-listblockeddomains.sh
-renewtrojan.sh
-renewvless.sh
-renewvmess.sh
-serviceactivities.sh
-SSH-MENU.sh
-systemstatus.sh
-trojanmenu.sh
-vlessmenu.sh
-vmessmenu.sh
-flags.sh
-)
-
-echo "[+] Descargando scripts desde GitHub..."
-
-for file in "${FILES[@]}"; do
-    wget -q "$REPO/$file" -O "$file"
-    if [[ -f "$file" ]]; then
-        chmod +x "$file"
-        echo "   ✔ $file descargado"
-    else
-        echo "   ✖ ERROR: No se pudo descargar $file"
-    fi
-done
-
-# -----------------------------------------
-# 4. Instalar XRAY
-# -----------------------------------------
-echo "[+] Instalando XRAY..."
-bash <(curl -Ls https://raw.githubusercontent.com/XTLS/Xray-install/main/install-release.sh)
-
-# -----------------------------------------
-# 5. Dominio manual
-# -----------------------------------------
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "        SSH XRAY-WEBSOCKET - INSTALADOR"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "============================================"
-echo " Ingresa tu dominio (sin Cloudflare API) "
-echo "============================================"
-read -p "Dominio: " DOMAIN
 
-if [[ -z "$DOMAIN" ]]; then
-    echo "✖ No ingresaste un dominio. Abortando."
+# Verificar root
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Este instalador debe ejecutarse como root."
     exit 1
 fi
 
-echo "$DOMAIN" > /etc/xray/domain
+# Ubicación base de los scripts
+BASE_DIR="/etc/sshxray"
+mkdir -p $BASE_DIR
+cd $BASE_DIR
 
-bash certificate.sh "$DOMAIN"
+# Descargar todos los scripts desde tu GitHub
+REPO="https://raw.githubusercontent.com/Omar-campos/ssh-xray-websocket/main"
 
-# -----------------------------------------
-# 6. Crear comando 'menu'
-# -----------------------------------------
-echo "#!/bin/bash
-bash $INSTALL_DIR/SSH-MENU.sh" > /usr/bin/menu
+echo "Descargando archivos..."
+for file in tools.sh certificate.sh webserver.sh badvpn.sh dropbear.sh websocket.sh ghostray.sh \
+            addssh.sh changedomain.sh deletessh.sh listusers.sh renewcertificate.sh restartservices.sh \
+            sshlogin.sh addtrojan.sh addvless.sh addvmess.sh block_site_trojan.sh block_site_vless.sh \
+            block_site_vmess.sh bot.sh changebanner.sh checkbandwith.sh checkconfigtrojan.sh \
+            checkconfigvless.sh checkconfigvmess.sh checkuserlogintrojan.py checkuserloginvless.py \
+            checkuserloginvmess.py deletetrojan.sh deletevless.sh deletevmess.sh listblockeddomains.sh \
+            renewtrojan.sh renewvless.sh renewvmess.sh serviceactivities.sh SSH-MENU.sh \
+            systemstatus.sh trojanmenu.sh vlessmenu.sh vmessmenu.sh flags.sh webserver.sh \
+            not_found.html
+do
+    wget -q -O "$file" "$REPO/$file"
+    chmod +x "$file"
+done
 
-chmod +x /usr/bin/menu
-
-# -----------------------------------------
-# 7. Instalación finalizada
-# -----------------------------------------
 echo ""
-echo "=========================================="
-echo "     Instalación completada con éxito"
-echo "=========================================="
-echo "   Dominio: $DOMAIN"
-echo "   Menú: menu"
-echo "   Ruta de instalación: $INSTALL_DIR"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "        CONFIGURACIÓN INICIAL DE DOMINIO"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
 echo ""
-echo "=========================================="
+read -p "Ingresa tu dominio manualmente: " DOMAIN
+echo "$DOMAIN" > /etc/domain
+
+echo ""
+echo "Dominio configurado: $DOMAIN"
+sleep 1
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "     INICIANDO INSTALACIÓN DE SERVICIOS"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+echo -e "\n→ Ejecutando tools.sh..."
+bash tools.sh
+
+echo -e "\n→ Configurando certificados..."
+bash certificate.sh
+
+echo -e "\n→ Instalando webserver..."
+bash webserver.sh
+
+echo -e "\n→ Instalando BadVPN..."
+bash badvpn.sh
+
+echo -e "\n→ Instalando Dropbear..."
+bash dropbear.sh
+
+echo -e "\n→ Instalando WebSocket..."
+bash websocket.sh
+
+echo -e "\n→ Instalando Ghostray/Xray..."
+bash ghostray.sh
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "    INSTALACIÓN COMPLETA - SSH XRAY-WEBSOCKET"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "Para abrir el menú usa:  SSH-MENU"
+echo ""
+exit
